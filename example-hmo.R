@@ -1,4 +1,4 @@
-# # HMO Example
+# HMO Example
 library(dplyr)
 library(nlme) # the standard analysis, by REML
 library(devtools)
