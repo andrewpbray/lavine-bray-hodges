@@ -1,91 +1,9 @@
-# HMO Example
+# # HMO Example
 library(dplyr)
 library(nlme) # the standard analysis, by REML
 library(devtools)
 devtools::install_github("andrewpbray/lmmoptim")
 library("lmmoptim")
-
-data(hmo)
-
-mod <- lme(indPrem ~ 1, data = hmo, random = ~1 | state, control = list(apVar=TRUE))
-summary(mod)
-
-# random intercept model
-y <- hmo$indPrem
-n <- length(y)
-mod <- lm(indPrem ~ state, data = hmo, x = TRUE)
-x <- mod$x[, 1, drop = FALSE]
-z <- mod$x[, -1, drop = FALSE]
-SigE <- diag(n)
-SigS <- diag(44)
-
-lines <- findlines(x, z, y, SigE, SigS)
-
-pdf("hmolines.pdf")
-showlines(lines)
-dev.off()
-
-mlrebox <- with(lines,
-                makebox(lims.sigsqs = c(0, max(int.sigsqs[is.finite(int.sigsqs)])),
-	                      lims.sigsqe = c(0, max(int.sigsqe[is.finite(int.sigsqe)])),
-	                      status = rep("straddle", nrow(lines)),
-                        lines = lines))
-
-boxes <- fitlmm(lines = lines, mlrebox, eps = 1, delE = 10, delS = 10, M = 5, maxit = 10)
-p <- showboxes(boxes)
-
-pdf("figs/hmoboxes.pdf")
-p + theme_bw()
-dev.off()
-jpeg("figs/hmoboxes.jpg")
-p + theme_bw()
-dev.off()
-
-p <- showfunc(boxes)
-pdf("figs/hmorll.pdf")
-p + scale_x_log10 () + scale_y_log10 () + theme_bw()
-dev.off()
-jpeg("figs/hmorll.jpg")
-p + scale_x_log10 () + scale_y_log10 () + theme_bw()
-dev.off()
-
-# the previous figure suggests we can limit our attention to a smaller region
-box2 <- with(lines,
-             makebox(lims.sigsqe = c(0, 1000),
-                     lims.sigsqs = c(0, 2000),
-                     status = rep("straddle", nrow(lines)),
-                     lines = lines))
-
-boxes2 <- fitlmm(lines = lines, box2, eps = .5, delE = 0, delS = 0, ratio = TRUE,
-                 M = 20, maxit = 25)
-
-mrle <- which.max(boxes2$rll.lower)
-
-p <- showboxes(boxes2)
-pdf("figs/hmoboxes2.pdf")
-p + theme_bw()# + scale_x_log10 () + scale_y_log10 ()
-dev.off()
-jpeg("figs/hmoboxes2.jpeg")
-p + theme_bw()# + scale_x_log10 () + scale_y_log10 ()
-dev.off()
-
-p <- showfunc(boxes2)
-pdf("figs/hmorll2.pdf")
-p + scale_x_log10 () + scale_y_log10 () + theme_bw()
-dev.off()
-jpeg("figs/hmorll2.jpeg")
-p + scale_x_log10 () + scale_y_log10 () + theme_bw()
-dev.off()
-
-p + scale_x_log10(limits = c(200, 1000),
-                  breaks = seq(200, 1000, by = 200),
-                  name = expression(sigma^2[e])) +
-  scale_y_log10(limits = c(0, 1000),
-                breaks = 10^seq(-3, 3, by = 2),
-                name = expression(sigma^2[s])) +
-  theme_bw()
-
-save.image()
 
 # model 2, with some fixed effects
 # random intercept model
@@ -108,7 +26,7 @@ summary(mod)
 
 lines <- findlines(x, z, y, SigE, SigS)
 
-pdf("figs/hmolines.HH11.pdf")
+pdf("figs/hmolines_HH11.pdf")
 showlines(lines)
 dev.off()
 
@@ -118,19 +36,18 @@ mlrebox <- with(lines,
 	                      status = rep("straddle", nrow(lines)),
                         lines = lines))
 
-boxes.HH11 <- fitlmm(lines = lines, mlrebox, eps = 5,
-                     delE = log(10), delS = log(10), ratio = TRUE,
-                     M = 5, maxit = 10)
+boxes.HH11 <- fitlmm(lines = lines, mlrebox, eps = 5, delE = log(10), 
+                     delS = log(10), ratio = TRUE, M = 5, maxit = 10)
 
 p <- showboxes(boxes.HH11)
-pdf("figs/hmo.HH11.boxes.pdf")
+pdf("figs/hmo_HH11_boxes.pdf")
 p + scale_x_continuous(name = expression(sigma[e]^2)) +
     scale_y_continuous(name = expression(sigma[s]^2)) +
     theme_bw()
 dev.off()
 
 p <- showfunc(boxes.HH11)
-pdf("figs/hmo.HH11.rll.pdf")
+pdf("figs/hmo_HH11_rll.pdf")
 p + scale_x_log10(name = expression(sigma[e]^2),
                   breaks = c(100,300,1000,3000,10000)) +
     scale_y_log10(name = expression(sigma[s]^2),
@@ -149,14 +66,14 @@ box2 <- with(lines,
 boxes.HH11 <- fitlmm(lines = lines, box2, eps = 1, M = 10, maxit = 15)
 
 p <- showboxes(boxes.HH11)
-pdf("figs/hmo.HH11.boxes2.pdf")
+pdf("figs/hmo_HH11_boxes2.pdf")
 p + scale_x_continuous(name = expression(sigma[e]^2), limits = c(300, 1000)) +
     scale_y_continuous(name = expression(sigma[s]^2)) +
     theme_bw()
 dev.off()
 
 p <- showfunc(boxes.HH11)
-pdf("figs/hmo.HH11.rll2.pdf")
+pdf("figs/hmo_HH11_rll2.pdf")
 p + scale_x_log10(name = expression(sigma[e]^2),
                   breaks = c (300,500,1000)) +
     scale_y_log10(name = expression(sigma[s]^2),
@@ -166,7 +83,7 @@ dev.off()
 
 # Bayesian analysis using Hodges 1998 prior
 lines <- addprior(lines, a.E = 1, b.E = 0, a.S = 1.1, b.S = .1)
-pdf("figs/hmolines.HH11.Bayes.pdf")
+pdf("figs/hmolines_HH11_Bayes.pdf")
 showlines(lines)
 dev.off()
 
@@ -204,5 +121,5 @@ tmp2 <- dinvgamma(tmp, shape = 1.1, rate = 0.1)
 plot(tmp, tmp2, type = "l")
 abline(v = 0.04761905)
 
-save.image()
+save.image("model2.RData")
 
