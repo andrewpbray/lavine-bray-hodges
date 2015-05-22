@@ -10,7 +10,7 @@
 \usepackage{fullpage}
 %\usepackage{mathtools}
 \usepackage{natbib}
-\usepackage{enumitem}
+\usepackage[inline]{enumitem}
 \usepackage{subdepth}
 %\usepackage{appendix}
 %\usepackage{setspace}
@@ -169,11 +169,15 @@ where
 \end{itemize}
 Our derivation proceeds from \eqref{eq:sum}.  We use $f$ to denote the target function generically, either $\RLorig(\sigesq,\sigssq)$ or $\pi(\sigesq,\sigssq\g y)$.  When the target function is $\RLorig(\sigesq,\sigssq)$, $c_{s_z+2} = d_{s_z+2} = 0$ and the upper limit of the sum in \eqref{eq:sum} is effectively $s_z+1$.
 
-It is known (e.g.\ \citealt{henn&hodges:2014}) that $\logRLss$\  
-can have multiple maxima and that existing general purpose algorithms for linear mixed models may fail to find all of them, as shown by examples in \cite{hodges:2013}, \cite{henn&hodges:2014}, and elsewhere.
-\cite{mullen:2014} examines 18 optimization functions available in \R; tests them on 48 objective functions, admittedly more complicated than $\logRLss$; and finds that even the best of them fail in over 10\% of the cases.  \cite{henn&hodges:2014} examine conditions under which multiple maxima occur in posterior densities and conclude ``\dots second maxima in posterior distributions therefore may be more common than reports in the literature would suggest."  Thus, failure to find local and global maxima may be common.  
+It is known (e.g.\ \citealt{henn&hodges:2014}) that $\logRLss$
+can have multiple maxima,
+though the incidence of multiple maxima is unknown.  Multi-modal posterior distributions arise readily from conflict between the likelihood and prior;  \cite{Liu&Hodges:2003} explores an important such conflict in detail and \cite{wakefield:1998} gives a naturally-occurring example explored further in \cite{henn&hodges:2014}.  Multiple maxima in restricted likelihoods have received far less attention and any statement about their incidence would be speculation.  To our knowledge, two naturally-occurring cases have have been reported, in \cite{welham_thompson:2009} and \cite{reiss_etal:2014};  \cite{henn&hodges:2014} report an artificial case and give a recipe for manufacturing examples.  
 
-Our point of view is that it is important to find regions where $f$ or $\log f$ is large relative to its maximum regardless of whether the regions contain local maxima.  (E.g., if $f$ or $\log f$ is relatively flat and large over a region, it matters little whether the region contains small bumps that are, technically, local maxima.)  This paper shows how to find $(\sshat) \equiv \argsup_{\sigesq, \sigssq}\logRLss$ globally (typically either the maximum restricted log likelihood estimate or the maximum \textit{a posteriori} estimate) and to evaluate $\logRLss$ everywhere, each to within a prespecified tolerance (hence ``approximately exact''), without fear of missing regions of high $f$ or $\logRL$.  The technique relies on the partial derivatives of $\logRLss$.  Analysis of the partial derivatives allows us to satisfy two desiderata.
+As for numerical optimizers, it is known that existing general purpose algorithms for linear mixed models may fail to find all of the local maxima of $\logRLss$, as shown by examples in \cite{hodges:2013}, \cite{henn&hodges:2014}, and elsewhere.  \cite{mullen:2014} examines 18 optimization functions available in \R, tests them on 48 objective functions (admittedly more complicated than $\logRLss$) and finds that even the best of them fail in over 10\% of the cases.  \cite{henn&hodges:2014} examine conditions under which multiple maxima occur in posterior densities and conclude ``\dots second maxima in posterior distributions therefore may be more common than reports in the literature would suggest."  Thus, failure to find local and global maxima may be common, though with available tools it is extremely laborious to determine whether multiple maxima are present and where they are.
+
+Our point of view is that it is important to find regions where $f$ or $\log f$ is large relative to its maximum regardless of whether those regions contain local maxima.  Points with large $\logRLss$ are those that describe the data, and possibly also prior information, well, at least compared to points with low $\logRLss$.  If $f$ or $\log f$ is relatively flat and large over a region, it matters little whether the region contains small bumps that are, technically, local maxima.  A good analysis should strive to find all  points with large $\logRL$.  Therefore, the purpose of this paper is to introduce an algorithm that will, in finite time, divide the $(\sigesq,\sigssq)$ plane into two parts: one where we know $\logRL$ is small relative to its maximum and another where we know $\logRL$ to within a pre-specified $\epsilon$ (hence the term ``approximately exact'').  The algorithm can also be used to find $(\sshat) \equiv \argsup_{\sigesq, \sigssq}\logRLss$  (typically either the maximum restricted log likelihood estimate or the maximum \textit{a posteriori} estimate), to within a pre-specified tolerance without fear of missing regions of high $f$ or $\logRL$.
+
+The technique relies on the partial derivatives of $\logRLss$.  Analysis of the partial derivatives allows us to satisfy two desiderata.
 \begin{description}
 \item[D1] For any prespecified constant $M>0$ we can find a box $B$, a rectangle in the first quadrant of the $(\sigssq, \sigesq)$ plane whose sides are parallel to the axes, such that
 \begin{equation}
@@ -182,17 +186,18 @@ Our point of view is that it is important to find regions where $f$ or $\log f$ 
 \end{equation}
 In practice we will take $M$ to be large enough to interpret (\ref{eq:boundingbox}) as meaning that we can restrict attention to $B$ because values of $(\sigesq, \sigssq) \in B^c$ have $\logRLss$ too low to be of further interest.
 
-\item[D2] For any box $b$ we can quickly compute lower and upper bounds $(L^b,U^b)$ satisfying
+\item[D2] For any box $b$ with sides parallel to the axes we can quickly compute lower and upper bounds $(L^b,U^b)$ satisfying
 \begin{equation*}
   L^b \le \inf_{(\sigesq, \sigssq) \in b}\logRLss \qquad\text{and}\qquad
   U^b \ge \sup_{(\sigesq, \sigssq) \in b}\logRLss
 \end{equation*}
 and such that $U^b-L^b \rightarrow 0$ as $b$ shrinks.  Therefore, partitioning the box $B$ from \textbf{D1} allows us to know $\logRLss$ everywhere in $B$ to within a pre-specified tolerance and also to locate $\argsup\logRL$ to within a pre-specified tolerance without fear of missing regions of high $\logRL$.
 \end{description}
-The next section shows how the partial derivatives are used to satisfy \textbf{D1} and \textbf{D2}.
+\textbf{D1} and \textbf{D2} allow us to divide the $(\sigesq,\sigssq)$ plane into two parts: one where $\logRL$ is at least $M$ below its maximum and another where we know $\logRL$ to within a pre-specified $\epsilon$.  The next section shows how the partial derivatives are used to satisfy \textbf{D1} and \textbf{D2}.
 
 \section{Satisfying the Desiderata}
 \subsection{Partial Derivatives Determine Lines}
+\label{subsec:lines}
 The partial derivatives of $\logRLss$ can be calculated from (\ref{eq:sum}):
 \begin{subequations}
 \label{eq:partials}
@@ -212,7 +217,7 @@ and
 \end{equation}
 \end{subequations}
 
-We work with one term in (\ref{eq:partials})'s summations at a time; that is, one $j$ at a time.  For $j=1, \dots, s_z$, the $j$'th terms in (\ref{eq:partials}) differ  by a multiplicative constant $a_j/b_j = a_j$; they have the same sign as each other and the same sign as $(a_jc_j\sigssq + b_jc_j\sigesq  - d_j) = (a_j\sigssq + \sigesq  - d_j)$, which determines a line $\sigssq = d_j/a_j - \sigesq/a_j$ --- call it the $j$'th line --- in the first quadrant of the $(\sigssq,\sigesq)$ plane.  The $j$'th line has positive intercept $ d_j/a_j$ and negative slope $-1/a_j$.  For $j=s_z+1$, $a_j=0$, so $\eqref{eq:drlds} = 0$ and \eqref{eq:partials} determines a vertical line at $\sigesq = \sigma_e^{2*} \equiv d_{s_z+1} / c_{s_z+1}$.  For $j=s_z+2$,  $b_j=0$, so $\eqref{eq:drlde} = 0$ and, if the target function is \eqref{eq:logpost}, \eqref{eq:partials} determines a horizontal line at $\sigssq = \sigma_s^{2*} \equiv d_{s_z+2} / c_{s_z+2}$, while if the target function is \eqref{eq:reexpress}, $c_{s_z+2} = d_{s_z+2} = 0$ and the term for $j=s_z+2$ effectively vanishes.
+We work with one term in (\ref{eq:partials})'s summations at a time; that is, one $j$ at a time.  For $j=1, \dots, s_z$, the $j$'th terms in (\ref{eq:partials}) differ  by a multiplicative constant $a_j/b_j = a_j$; they have the same sign as each other and the same sign as $(a_jc_j\sigssq + b_jc_j\sigesq  - d_j) = (a_j\sigssq + \sigesq  - d_j)$, which determines a line $\sigssq = d_j/a_j - \sigesq/a_j$ --- call it the $j$'th line --- in the first quadrant of the $(\sigssq,\sigesq)$ plane.  The $j$'th line has positive intercept $ d_j/a_j$ and negative slope $-1/a_j$.  For $j=s_z+1$, $a_j=0$, so $\eqref{eq:drlds} = 0$ and \eqref{eq:partials} determines a vertical line at $\sigesq = \sigma_e^{2*} \equiv d_{s_z+1} / c_{s_z+1}$.  For $j=s_z+2$,  $b_j=0$, so $\eqref{eq:drlde} = 0$ and, if the target function is \eqref{eq:logpost}, \eqref{eq:partials} determines a horizontal line at $\sigssq = \sigma_s^{2*} \equiv d_{s_z+2} / c_{s_z+2}$, while if the target function is \eqref{eq:reexpress}, $c_{s_z+2} = d_{s_z+2} = 0$; the term for $j=s_z+2$ effectively vanishes; and there is no horizontal line.
 
 For all $j$, both partial derivatives of the $j$'th term are nonnegative below or to the left of the $j$'th line, 0 on the line, and nonpositive above or to the right of the line, as indicated in Figure~\ref{fig:oneline}.  The $j$'th term is constant on the $j$'th line and attains its maximum there.
 %Both \eqref{eq:reexpress} and \eqref{eq:logpost} contain a term, call it the $v$'th (for vertical) term,  with $a_j=0$.  The $v$'th term in (\ref{eq:partials}) is negative to the right of the $v$'th line, positive to the left, and 0 on the line; hence the $v$'th term in \eqref{eq:logpost} is maximized on the $v$'th line.  \eqref{eq:logpost} also contains a term, call it the $h$'th (for horizontal) term, with $b_j=0$.  The corresponding line is horizontal at $\sigssq = \sigma_e^{2h} \equiv d_h / a_h c_h$.  The $h$'th term in \eqref{eq:logpost} is maximized on the $h$'th line.
@@ -251,7 +256,7 @@ Figure~(\ref{fig:bigboundingbox}) shows five lines --- realistic data sets may h
   \label{fig:boundingbox}
 \end{figure}
 
-To find $B$, choose an arbitrary constant $M>0$ and an arbitrary point inside $B_1$, say $p$, as illustrated in Figure~(\ref{fig:boundingbox2}) and define $L \equiv \logRL(p)$.  We will find a box $B\supset B_1$, as shown in Figure~(\ref{fig:boundingbox2}), outside of which $\logRLss \le L-M$, thus satisfying \textbf{D1}.
+To find $B$, choose an arbitrary constant $M>0$ and an arbitrary point inside $B_1$, say $p$, as illustrated in Figure~(\ref{fig:boundingbox2}), and define $L \equiv \logRL(p)$.  We will find a box $B\supset B_1$, as shown in Figure~(\ref{fig:boundingbox2}), outside of which $\logRLss \le L-M$, thus satisfying \textbf{D1}.
 
 $B$ is determined by its intercepts $\widetilde{\sigma_e^2}$ and $\widetilde{\sigma_s^2}$ on the $\sigesq$ and $\sigssq$ axes respectively.  Let $\widetilde{q_1} = (0,\widetilde{\sigma_s^2})$ be the intercept of $B$ and the $\sigssq$ axis and let $\widetilde{q_2} = (\sigma_e^{2*},\widetilde{\sigma_s^2})$. Points such as $q_1$ which satisfy $\sigesq \le \sigma_e^{2*}$ and $\sigssq \ge \widetilde{\sigma_s^2}$ --- above $B$ and to the left of the $s_z+1$ line --- are in a region where the partial derivatives (\ref{eq:drlds}, \ref{eq:drlde}) are negative for $j \in \{1, \dots, s_z, s_z+2\}$ but nonnegative for $j=s_z+1$.  Let $\logRL_j(\cdot)$ denote the $j$'th term of \eqref{eq:sum} evaluated at $(\cdot)$.  
 \begin{equation}
@@ -297,7 +302,98 @@ Combining the requirements for points like $q_1$, $q_2$, $q_3$, and $q_4$, desid
 	\label{fig:boundingbox2}
 \end{figure}
 
+
+\subsection*{Alt: Lines Determine a Bounding Box}
+%\label{sec:boundingbox}
+
+Let $\sigesq{}^M$ and $\sigssq{}^M$ be the largest intercepts of the $s_z+2$ lines on the $\sigesq$ and $\sigssq$ axes, respectively.  I.e.,
+\begin{align*}
+  \sigesq{}^M &= \max \left\{ \frac{d_1}{c_1}, \cdots, \frac{d_{s_z+1}}{c_{s_z+1}} \right\}\\
+  \sigssq{}^M &= \begin{cases}
+                             \max \left\{ \frac{d_1}{a_1}, \cdots, \frac{d_{s_z}}{a_{s_z}} \right\} &
+                                  \text{if $\logRL$ is \eqref{eq:reexpress}}\\
+                             \max \left\{ \frac{d_1}{a_1}, \cdots, \frac{d_{s_z}}{a_{s_z}}, \frac{d_{s_z+2}}{c_{s_z+2}} \right\} &
+                                  \text{if $\logRL$ is \eqref{eq:logpost}}.
+                           \end{cases}
+\end{align*}
+Let $B_1$ be the box whose lower-left and upper-right corners are $(0,0)$ and $(\sigesq{}^M,\sigssq{}^M)$, respectively.  Figure~(\ref{fig:bigboundingbox}) illustrates with five lines --- realistic data sets may have more --- labelled $j=1, 2, 3, s_z+1, s_z+2$.\\
+\textbf{Claim} \emph{All local maxima of $\logRL$ lie within $B_1$.}\\
+\textbf{Proof} Let $p_1 = (\sigesq{}_1, \sigssq{}_1)$ be a point such that $\sigssq{}_1 > \sigssq{}^M$ and let $\widetilde{p_1} = (\sigesq{}_1, \sigssq{}^M)$, as illustrated in Figure~(\ref{fig:bigboundingbox}).  For $j=1, \dots, s_z, s_z+2$, the partial derivatives \eqref{eq:drlde} are negative; for $j=s_z+1$, the partial derivative is zero.  Therefore, $\logRL(\widetilde{p_1}) \ge \logRL(p_1)$ and there can be no local maxima of $\logRL$ above the line $\sigssq = \sigssq{}^M$.  Let $p_2 = (\sigesq{}_2, \sigssq{}_2)$ be a point such that $\sigesq{}_2 > \sigesq{}^M$ and let $\widetilde{p_2} = (\sigesq{}^M, \sigssq{}_2)$.  For $j=1, \dots, s_z, s_z+1$, the partial derivatives \eqref{eq:drlds} are negative; for $j=s_z+2$, the partial derivative is zero.   Therefore, $\logRL(\widetilde{p_2}) \ge \logRL(p_2)$ and there can be no local maxima of $\logRL$ to the right of the line $\sigesq = \sigesq{}^M$.  \textbf{QED}\\
+
+By the claim, \mrle\ must lie on or inside $B_1$, so $B_1$ could be passed to an optimizer such as \R's \textsf{optim} or \textsf{nlminb} with potentially better results than using those functions without bounds.  However, even with known bounds, general purpose optimizers may still miss \mrle\ and regions of high $\logRL$.  We will next find a box $B \supset B_1$ satisfying desideratum \textbf{D1}.  First, though, we pause to note that the region outlined in bold in Figure~(\ref{fig:smallboundingbox}) is a subset of $B_1$ that must also contain \mrle\ by the same reasoning used to prove the previous claim.  But it is not rectangular, hence less convenient than $B_1$, so we don't pursue it further.
+
+%\begin{figure}[h]
+%  \begin{subfigure}{.5\textwidth}
+%	\centering
+%	\includegraphics[width=.8\linewidth]{figs/boundingbox.pdf}
+%	\caption{A rectangular region $B_1$ containing all maxima.}
+%	\label{fig:bigboundingbox}
+%  \end{subfigure}
+%  \begin{subfigure}{.5\textwidth}
+%	\centering
+%	\includegraphics[width=.8\linewidth]{figs/smallboundingregion.pdf}
+%	\caption{A smaller region containing all maxima.}
+%	\label{fig:smallboundingbox}
+%  \end{subfigure}
+%  \caption{all local and global maxima lie in the regions bounded by the solid
+%                dark line.
+%               }
+%  \label{fig:boundingbox}
+%\end{figure}
+
+\noindent\textbf{Claim} \emph{For any positive number $M$, there exist positive numbers $\widetilde{\sigma_e^2} > \sigesq{}^M$ and $\widetilde{\sigma_s^2} > \sigssq{}^M$ that determine a box $B \supset B_1$ whose lower-left and upper-right corners are $(0,0)$ and $(\widetilde{\sigma_e^2}, \widetilde{\sigma_s^2})$, respectively, such that
+\begin{equation*}
+  \sup_{B_1^c} \logRLss \le \logRL(\sshat) - M.
+\end{equation*}}
+I.e., \textbf{D1} is satisfied.\\
+\noindent\textbf{Proof}
+Let $p$ be an arbitrary point inside $B_1$, as illustrated in Figure~(\ref{fig:boundingbox2}), and define $L \equiv \logRL(p)$.  Let $\widetilde{q_1} = (0,\widetilde{\sigma_s^2})$ be the intercept of $B$ and the $\sigssq$ axis and let $\widetilde{q_2} = (\sigma_e^{2*},\widetilde{\sigma_s^2})$.  Let $q_1 = (\sigesq{}_1, \sigssq{}_1)$ be a point satisfying $\sigesq{}_1 \le \sigma_e^{2*}$ and $\sigssq{}_1 \ge \widetilde{\sigma_s^2}$ --- above $B$ and to the left of the $s_z+1$ line.  The partial derivatives (\ref{eq:drlds}), evaluated at $q_1$ are negative for $j \in \{1, \dots, s_z, s_z+2\}$ but zero for $j=s_z+1$.  The partial derivatives (\ref{eq:drlde}), evaluated at $q_1$ are negative for $j \in \{1, \dots, s_z, s_z+1\}$ but nonnegative for $j=s_z+2$.  Let $\logRL_j(\cdot)$ denote the $j$'th term of \eqref{eq:sum} evaluated at $(\cdot)$.  
+\begin{equation}
+	\logRL(\sshat) - \logRL(q_1) \ge L - \sum_{j \ne s_z+1} \logRL_j(\widetilde{q_1}) - \logRL_{s_z+1}(\widetilde{q_2}),
+\end{equation}
+which is larger than $M$ if
+\begin{equation}
+\label{eq:q1}
+  \begin{split}
+    \sum_{j \ne s_z+1} \logRL_j(\widetilde{q_1})
+      &< L - M - \logRL_{s_z+1}(\widetilde{q_2})\\
+      &= L - M + \frac{1}{2} \left[ c_{s_z+1}\log\sigma_e^{2*} + \frac{d_{s_z+1}}{\sigma_e^{2*}}\right].
+  \end{split}
+\end{equation}
+Examination of (\ref{eq:sum}) shows that for any fixed $\sigesq$, in particular for $\sigesq=0$, and for $j \ne s_z+1$,\\ $\lim_{\sigssq \rightarrow \infty} \logRL_j(\sigesq,\sigssq) = -\infty$.  Thus $\widetilde{\sigma_s^2}$ can be chosen large enough so that the summation on the l.h.s.~of \eqref{eq:q1} is less than the r.h.s.~of \eqref{eq:q1}, and  \textbf{D1} is satisfied.
+
+Let $q_2 = (\sigesq{}_2, \sigssq{}_2)$ satisfy $\sigesq{}_2 \ge \sigma_e^{2*}$ and $\sigssq{}_2 \ge \widetilde{\sigma_s^2}$ --- above $B$ and to the right of the $s_z+1$ line.  (Points $q_2$ and $q_3$ in Figure~(\ref{fig:boundingbox2}) both satisfy this criterion.)  The partial derivatives (\ref{eq:drlds}, \ref{eq:drlde}) evaluated at $q_2$ are nonpositive for $j \in \{1, \dots, s_z+2\}$; therefore, $\logRL(\sshat) - \logRL(q_2) \ge L - \logRL(\widetilde{q_2})$.  The latter expression is greater than $M$ iff $\logRL(\widetilde{q_2}) < L-M$.  But examination of (\ref{eq:sum}) shows that for any fixed $\sigesq$, $\lim_{\sigssq \rightarrow \infty} \logRLss = -\infty$ and therefore $\widetilde{\sigma_s^2}$ can be chosen large enough so that \textbf{D1} is satisfied.
+
+Let $\widetilde{q_3} = (\widetilde{\sigma_e^2}, \sigma_s^{2*})$ and let $q_3 = (\sigesq{}_3, \sigssq{}_3)$ satisfy $\sigesq{}_3 \ge \widetilde{\sigma_e^2}$ and $\sigssq{}_3 \ge \sigma_s^{2*}$.  The partial derivatives (\ref{eq:drlds}, \ref{eq:drlde}) evaluated at $q_3$ are nonpositive for $j \in \{1, \dots, s_{z+2}\}$; therefore, $\logRL(\sshat) - \logRL(q_3) \ge L - \logRL(\widetilde{q_3})$.  The latter expression is greater than $M$ iff $\logRL(\widetilde{q_3}) < L-M$.  But examination of (\ref{eq:sum}) shows that for any fixed $\sigssq$, $\lim_{\sigesq \rightarrow \infty} \logRLss = -\infty$ and therefore $\widetilde{\sigma_e^2}$ can be chosen large enough so that \textbf{D1} is satisfied.
+
+Let $\widetilde{q_4} = (\widetilde{\sigma_e^2},0)$ and let $q_4 = (\sigesq{}_4, \sigssq{}_4)$ satisfy $\sigssq{}_4 \le \sigma_s^{2*}$ and $\sigesq{}_4 \ge \widetilde{q_4}$.  The partial derivatives \eqref{eq:drlds} evaluated at $q_4$ are nonpositive for $j \in \{1, \dots, s_z+1\}$  but nonnegative for $j=s_z+2$.  The partial derivatives \eqref{eq:drlde} evaluated at $q_4$ are nonpositive for $j \in \{1, \dots, s_z, s_z+2\}$  but nonnegative for $j=s_z+1$. Therefore,
+\begin{equation*}
+	\logRL(\sshat) - \logRL(q_4) \ge L - \sum_{j \ne s_z+2} \logRL_j(\widetilde{q_4}) - \logRL_{s_z+2}(\widetilde{q_3})
+\end{equation*}
+which is larger than $M$ if
+\begin{equation}
+\label{eq:q4}
+  \begin{split}
+    \sum_{j \ne s_z+2} \logRL_j(\widetilde{q_4})
+      &< L - M - \logRL_{s_z+2}(\widetilde{q_3})\\
+      &= L - M + \frac{1}{2} \left[ c_{s_z+2}\log\sigma_s^{2*} + \frac{d_{s_z+2}}{\sigma_s^{2*}}\right].
+  \end{split}
+\end{equation}
+Examination of (\ref{eq:sum}) shows that for any fixed $\sigssq$, in particular for $\sigssq=0$, and for $j \ne s_z+2$,\\ $\lim_{\sigesq \rightarrow \infty} \logRL_j(\sigesq,\sigssq) = -\infty$.  Thus $\widetilde{\sigma_e^2}$ can be chosen large enough so that the summation on the l.h.s.~of \eqref{eq:q4} is less than the r.h.s.~of \eqref{eq:q4}, and  \textbf{D1} is satisfied.
+
+Combining the requirements for points like $q_1$, $q_2$, $q_3$, and $q_4$, desideratum \textbf{D1} is satisfied for all points in $B^c$ by choosing $\widetilde{\sigma_e^2}$ and $\widetilde{\sigma_s^2}$ sufficiently large.  \textbf{QED}\\
+%enough to satisfy $\logRL(q_1^*) < L-M$ and choosing $\sigma_s^*$ large enough to satisfy $\logRL(q_2^*) < L-M$ and $\sum_{1}^{s_z} \logRL_j(q_3^*) < L - M + n_e(\log(\sigma_e^{2v}) + 1)/2$.  In addition, because $\logRL$ has no maxima outside of $B_1$, it also has no maxima outside of $B$.  As already mentioned, if there is an $h$ line, then $q_1$ would have to be treated like $q_2$ and $q_3$.
+
+%\begin{figure}[h]
+%	\centering
+%	\includegraphics[width=.5\linewidth]{figs/boundingbox2.pdf}
+%	\caption{Box $B$ satisfies (\ref{eq:boundingbox})}
+%	\label{fig:boundingbox2}
+%\end{figure}
+
+
 \subsection{Lines Determine Bounds within Boxes}
+\label{sec:boundsinboxes}
 \begin{figure}
 	\centering
 	\includegraphics[width=.5\linewidth]{figs/boxb.pdf}
@@ -312,22 +408,35 @@ Next we consider the relationship between the $\logRL_j$'s and boxes as depicted
 For any box $b$ let $L^b_j = \inf_{p\in b} \logRL_j(p)$ and $U^b_j = \sup_{p\in b} \logRL_j(p)$.  We have just shown that $L^b_j$ and $U^b_j$ are easily computable by evaluating $\logRL_j$ at either two points (two corners for lines like $j=2,3$) or three points (two corners and one on the line for lines like $j=1$).
 Armed with the $L^b_j$'s and $U^b_j$'s we can compute bounds on $\logRLss$ within $b$:
 \begin{equation}
+\label{eq:bounds}
 	L^b \equiv \sum_j L^b_j \le \inf_{(\sigssq,\sigesq)\in b} \logRLss \le
 	\sup_{(\sigssq,\sigesq)\in b} \logRLss \le \sum_j U^b_j \equiv U^b.
-\label{eq:bounds}
 \end{equation}
 Because $\logRL$ is continuous, $U^b - L^b \rightarrow 0$ as $b$ shrinks in both directions, thus satisfying desideratum \textbf{D2}.
 
 \section{An Algorithm}
-With \textbf{D1} and \textbf{D2} the following  algorithm will evaluate $\logRL$ to arbitrary accuracy everywhere within a box $B$.
+\label{sec:algorithm}
+Section~\ref{sec:boundingbox} shows how to determine a box $B_1$ containing all local maxima of $\logRLss$; and it shows that we can find a bigger box $B\supseteq B_1$ satisfying \textbf{D1}.  We are about to present an algorithm that uses Section~\ref{sec:boundsinboxes} to show that any bounded box $B^0$ can be partitioned into finitely many smaller boxes $B^0_1, \dots B^0_p$  such that, for each $B^0_i$ in the partition we know, for pre-specified constants $M, \epsilon >0$, either
+\begin{enumerate*}[label=(\alph*)]
+\item $\sup_{B^0_i} \logRL < \sup_{B_0} \logRL -M$ or
+\item $\sup_{B^0_i} \logRL - \inf_{B^0_i} \logRL < \epsilon$.
+\end{enumerate*}
+If $B^0$ satisfies \textbf{D1} and $B^0\supseteq B_1$ then we have accomplished our goal of dividing the plane into one region where we know $\logRL$ to be low and another where we know $\logRL$ to within $\epsilon$.  One strategy would be to find $B$ as outlined in Section~\ref{sec:boundingbox} and set $B^0 \equiv B$.  However, we have found that $B_1$ satisfies \textbf{D1} in all the examples we have tried and we therefore follow a different strategy.  We set $B^0 \equiv B_1$ and run the following algorithm, during which we learn whether $B_1$ satisfies \textbf{D1}.  If it does, we're done.  If it doesn't, then we would expand $B_1$ by a factor of 2 in both dimensions; set $B^0$ to be the expanded box; rerun the algorithm; and continue to expand and rerun until we find a $B^0$ that does satisfy \textbf{D1}.  Section~\ref{sec:boundingbox} shows that such a bounded $B^0$ exists, and thus we are sure to find it in finite time.
+
+With \textbf{D1} and \textbf{D2} the \textcompute{R} function \textcompute{findf}, sketched below, will evaluate, within a box $B^0$, $\logRL$ to arbitrary accuracy everywhere $\logRL$ is large.  These notes explain some parts of the function.
 \begin{enumerate}
-\item Specify constants \maxit, $M$, $\epsilon$, $\delta_e$, and $\delta_s$.
+\item A dataframe \textcompute{lines} is an input to \textcompute{findf}.  \textcompute{lines} contains the slopes
+  and the intercepts on both axes of the $s_z+2$ lines discussed in Section~\ref{subsec:lines}.
+  Details for computing them from $y$, $X$, $Z$, $\Sigma_e$, and $\Sigma_s$ are in the Appendix.
+\item \textcompute{startbox}, or $B^0$, is an input to \textcompute{findf}.  As explained at the beginning of
+  Section~\ref{sec:algorithm}, \textcompute{startbox} could be $B_1$, $B$, or any other box the user chooses.
+\item Constants \maxit, $M$, $\epsilon$, $\delta_e$, and $\delta_s$ are inputs to \textcompute{findf}.
 	\begin{enumerate}[label=(\alph*)]
 	\item \maxit\ is the maximum number (could be $\infty$) of iterations of
-		the algorithm's loop.
-	\item We will not carefully analyze regions of the plane where
+		\textcompute{findf}'s loop.
+	\item We will not further analyze regions of the plane where
 		$\logRLss < \logRL(\sshat) - M$.  ($M$ could be $\infty$.)
-	\item We will evaluate $\logRL$ to within an accuracy of $\epsilon$ (could be 0) inside $B$
+	\item We will evaluate $\logRL$ to within an accuracy of $\epsilon$ (could be 0) inside $B^0$
 	         unless evaluation is stopped by one of the other criteria.
 	\item We will not distinguish values of $\sigesq$ separated by less
 		than $\delta_e$ (could be 0) nor values of $\sigssq$ separated by
@@ -336,37 +445,116 @@ With \textbf{D1} and \textbf{D2} the following  algorithm will evaluate $\logRL$
 		in $\sigesq$ or $\log\sigesq$ (or $\sigssq$ or $\log\sigssq$) from one
 		side of the box to the other.)
 	\end{enumerate}
-	\maxit, $M$, $\epsilon$, $\delta_e$, and $\delta_s$ are constants that
-	control the running of the algorithm.  Their meaning may become more
-	clear as we explain the algorithm.
-\item With $y$, $X$, $Z$, $\Sigma_e$, and $\Sigma_s$ --- see \eqref{eq:lmm}
-	and \eqref{eq:rll} for definitions and the Appendix for details --- compute $\{a_j, b_j, c_j, d_j\}$ for $j=1,
-	\dots, s_z+2$.
-\item Create two lists of boxes: active and inactive.  Both lists are initially empty.
-\item Specify a box $B$ as the sole entry of the active list.  $B$ could be,
-	but doesn't have to be, a box satisfying desideratum \textbf{D1}.
-\item Either set $L = -\infty$ or evaluate $\logRL(p_i)$ at a few points
-	$p_1, \dots p_k$ and set $L = \max_i\logRL(p_i)$.  $L$ is our current
-	lower bound on $\logRL(\sshat)$.
-\item While the active list is not empty or we have not reached \maxit\
-	iterations
-	\begin{enumerate}
-	\item For each active box $b$:
-		\begin{enumerate}
-		\item if $U^b < L-M$ move $b$ to the inactive list.
-		\item if $U^b - L^b < \epsilon$ move $b$ to the inactive list
-		\item if the horizontal extent of $b$ is less than $\delta_e$,
-			move $b$ to the inactive list
-		\item if the vertical extent of $b$ is less than $\delta_s$,
-			move $b$ to the inactive list
-		\item otherwise, $b$ is still active.  Divide $b$ into four subboxes.
-			Remove $b$ and add the subboxes to the active list.
-		\end{enumerate}
-	\item Set $L = \max ( L, \max_{b\in \text{active list}}L^b )$.  $L$ is our new
-		lower bound on $\logRL(\sshat)$.
-	\end{enumerate}
-\item Return the active and inactive lists.
+\item A \textcompute{box} is a list consisting of
+	 \begin{itemize}
+	 \item upper and lower limits on $\sigesq$,
+	 \item upper and lower limits on $\sigssq$,
+	 \item upper and lower bounds on $\logRL$, $U^b$ and $L^b$ from \eqref{eq:bounds},
+	 \item indicators for whether this box lies above (or to the right of), below (or to the left of),
+	   or straddles each of the $s_z+2$ lines.
+	 \end{itemize}
+\item \textcompute{killfunc} is a function, shown below \textcompute{findf}, that determines whether
+	a box $b$ should be divided more finely.
+\item \textcompute{splitbox} is a function that takes a box $b =
+	[\sigesq{}_\text{low}, \sigesq{}_\text{high}] \times [\sigssq{}_\text{low}, \sigssq{}_\text{high}]$ as input 
+	and returns the four boxes created by dividing each side of $b$ at its midpoint.
+%\item With $y$, $X$, $Z$, $\Sigma_e$, and $\Sigma_s$ --- see \eqref{eq:lmm}
+%	and \eqref{eq:rll} for definitions and the Appendix for details --- compute $\{a_j, b_j, c_j, d_j\}$ for $j=1,
+%	\dots, s_z+2$.
+%\item Create two lists of boxes: active and inactive.  Both lists are initially empty.
+%\item Specify a box $B$ as the sole entry of the active list.  $B$ could be,
+%	but doesn't have to be, a box satisfying desideratum \textbf{D1}.
+%\item Either set $L = -\infty$ or evaluate $\logRL(p_i)$ at a few points
+%	$p_1, \dots p_k$ and set $L = \max_i\logRL(p_i)$.  $L$ is our current
+%	lower bound on $\logRL(\sshat)$.
+%\item While the active list is not empty or we have not reached \maxit\
+%	iterations
+%	\begin{enumerate}
+%	\item For each active box $b$:
+%		\begin{enumerate}
+%		\item if $U^b < L-M$ move $b$ to the inactive list.
+%		\item if $U^b - L^b < \epsilon$ move $b$ to the inactive list
+%		\item if the horizontal extent of $b$ is less than $\delta_e$,
+%			move $b$ to the inactive list
+%		\item if the vertical extent of $b$ is less than $\delta_s$,
+%			move $b$ to the inactive list
+%		\item otherwise, $b$ is still active.  Divide $b$ into four subboxes.
+%			Remove $b$ and add the subboxes to the active list.
+%		\end{enumerate}
+%	\item Set $L = \max ( L, \max_{b\in \text{active list}}L^b )$.  $L$ is our new
+%		lower bound on $\logRL(\sshat)$.
+%	\end{enumerate}
+%\item Return the active and inactive lists.
 \end{enumerate}
+\begin{verbatim}
+findf <- function(lines, startbox, eps = 0, delE = 0, delS = 0, M = Inf, maxit = 10,
+                  ratio = FALSE, lognote = "summary") {
+
+
+    inactive <- list()  # a list of inactive boxes
+    ninact <- 0  # the number of inactive boxes
+    
+    active <- list(startbox)  # a list of active boxes
+    nact <- 0  # the number of active boxes
+
+    lowbound <- -Inf  # lowerbound on max(log(f))
+    iter <- 0  # iteration number
+
+    while (nact > 0 && iter < maxit) {
+        # Find the lower bound of each box and the maximum of the lower bounds.  For
+        # each active box, either make it inactive or divide it.
+        low.act <- max(vapply(X = active, FUN = function(box) {
+            box$bounds[1]
+        }, FUN.VALUE = 0.1))
+        lowbound <- max(lowbound, low.act)
+        kill <- vapply(X = active, FUN = killfunc, FUN.VALUE = TRUE, lb = lowbound,
+            M = M, eps = eps, delE - delE, delS = delS, ratio = ratio)
+            # which boxes become inactive?
+        nkill <- sum(kill)
+        if (nkill > 0) {
+            inactive[(ninact + 1):(ninact + nkill)] <- active[kill] 
+            # add those boxes to the inactive list
+        }
+        ninact <- length(inactive)
+        kids <- list()  # subdivisions of active boxes
+        nkids <- 0
+        for (i in which(!kill)) {  # split active boxes into 4 parts
+            kids[(nkids + 1):(nkids + 4)] <- splitbox(active[[i]], lines)
+            nkids <- nkids + 4
+        }
+        active <- kids
+        nact <- length(active)
+
+        iter <- iter + 1
+        write(c("iteration", iter, "nact", nact, "ninact", ninact, "lowbound",
+            lowbound), file = "log.out", ncolumns = 8, append = TRUE)
+    }
+
+
+    tmp <- t(vapply(X = c(active, inactive), FUN = function(box) {
+        c(box$lims.sigsqs, box$lims.sigsqe, box$bounds)
+    }, FUN.VALUE = c(sigsqs.lo = 0.1, sigsqs.hi = 0.1, sigsqe.lo = 0.1, sigsqe.hi = 0.1,
+        rll.lower = 0.1, rll.upper = 0.1)))
+    end_time <- Sys.time()
+    write(paste(lognote, "runtime: ", round(end_time - start_time, digits = 3)),
+          file = "log.out", ncolumns = 1, append = TRUE)
+    return(data.frame(tmp))
+}
+
+# conditions under which a box becomes inactive
+killfunc <- function(box, lb, M, eps, delE, delS, ratio) {
+    # lb is a global (within startbox) lower bound on max(log(f));
+    #      it changes at each iteration.
+    #  M, eps, delE, delS stay constant throughout the iterations.
+    cond.low <- box$bounds[2] < lb - M
+    cond.eps <- diff(box$bounds) < eps
+    cond.E <- ifelse(ratio, diff(log(box$lims.sigsqe)) < delE,
+                            diff(box$lims.sigsqe) < delE)
+    cond.S <- ifelse(ratio, diff(log(box$lims.sigsqs)) < delS,
+                            diff(box$lims.sigsqs) < delS)
+    return(cond.low || cond.eps || cond.E || cond.S)  # stop dividing this box?
+}
+\end{verbatim}
 
 \section{Examples}
 
